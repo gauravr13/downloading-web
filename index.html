@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextGet - Media Downloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.2.1/dist/css/materialize.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+    <style>
+        :root {
+            --primary: #20B2AA;
+            --secondary: #40E0D0;
+            --accent: #FF6B6B;
+            --background: linear-gradient(45deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        body {
+            background: var(--background);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .nav-wrapper {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .brand-logo {
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .input-field {
+            margin: 2rem 0;
+        }
+
+        #urlInput {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            padding: 1.5rem 2rem;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #urlInput:focus {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .download-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .download-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .quality-badge {
+            background: var(--accent);
+            padding: 8px 20px;
+            border-radius: 0 0 0 20px;
+            right: 0;
+            top: 0;
+        }
+
+        .card-content {
+            padding: 2rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .wave-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 30px;
+            padding: 0 2.5rem;
+            height: 50px;
+            line-height: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .wave-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(32, 178, 170, 0.4);
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            margin: 3rem 0;
+            letter-spacing: 1px;
+            background: linear-gradient(45deg, #fff, var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <nav class="teal lighten-1">
+        <div class="nav-wrapper container">
+            <a href="#" class="brand-logo">NextGet</a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="#"><i class="material-icons left">help</i>FAQ</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="center-align hero-title teal-text text-darken-2">Download Media in Any Quality</h1>
+        
+        <div class="row">
+            <div class="col s12 m8 offset-m2">
+                <div class="input-field">
+                    <input type="text" id="urlInput" class="autocomplete" placeholder="Paste your link here">
+                    <button class="btn waves-effect waves-light teal wave-btn" onclick="handleDownload()">
+                        <i class="material-icons left">download</i>Analyze URL
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="resultsContainer">
+            <!-- Results will be inserted here -->
+        </div>
+
+        <div class="preloader-wrapper big active" id="loadingSpinner">
+            <div class="spinner-layer spinner-teal-only">
+                <div class="circle-clipper left">
+                    <div class="circle"></div>
+                </div>
+                <div class="gap-patch">
+                    <div class="circle"></div>
+                </div>
+                <div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.2.1/dist/js/materialize.min.js"></script>
+    <script>
+        async function handleDownload() {
+            const url = document.getElementById('urlInput').value;
+            const spinner = document.getElementById('loadingSpinner');
+            
+            if (!url) {
+                M.toast({html: 'Please enter a valid URL', classes: 'red'});
+                return;
+            }
+
+            spinner.style.display = 'block';
+            
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+                displayResults(data.formats);
+            } catch (error) {
+                M.toast({html: 'Error connecting to server', classes: 'red'});
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+
+        function displayResults(formats) {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = formats.map(format => `
+                <div class="col s12 m6 l4">
+                    <div class="download-card card-panel">
+                        <div class="quality-badge">${format.quality}</div>
+                        <div class="card-content">
+                            <span class="card-title teal-text">${format.type.toUpperCase()}</span>
+                            <p>Format: ${format.mimeType.split(';')[0]}</p>
+                            <p>Size: ${format.size || 'N/A'}</p>
+                        </div>
+                        <div class="card-action">
+                            <a class="waves-effect waves-light btn teal" 
+                               onclick="startDownload('${format.url}', '${format.quality}')">
+                                <i class="material-icons left">file_download</i>Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function startDownload(url, quality) {
+            M.toast({html: `Starting download: ${quality}`, classes: 'teal'});
+            // Implement actual download logic here
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = true;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
